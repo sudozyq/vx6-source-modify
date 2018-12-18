@@ -2,6 +2,7 @@
 #include "x86.h"
 
 void*
+//全部置0
 memset(void *dst, int c, uint n)
 {
   if ((int)dst%4 == 0 && n%4 == 0){
@@ -28,6 +29,7 @@ memcmp(const void *v1, const void *v2, uint n)
   return 0;
 }
 
+// 进行内存内容的移动，其实就是内存的加载
 void*
 memmove(void *dst, const void *src, uint n)
 {

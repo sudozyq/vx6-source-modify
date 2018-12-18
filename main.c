@@ -17,7 +17,16 @@ extern char end[]; // first address after kernel loaded from ELF file
 int
 main(void)
 {
+  /*****************************************************************************
+  //在运行时，内核需要为页表、进程的用户内存、内核栈及管道缓冲区分配空闲的物理内存。
+  //xv6 使用从内核结尾到PHYSTOP之间的物理内存为运行时分配提供内存资源。
+  //xv6 还会通过维护一个物理页组成的链表来寻找空闲页。
+  //所以，分配内存需要将页移出该链表，而释放内存需要将 页加入该链表
+  //调用kinit1和kinit2来初始化物理内存，
+  *****************************************************************************/
+  //1·kinit1初始化内核末尾到物理内存4M的物理内存空间为未使用
   kinit1(end, P2V(4*1024*1024)); // phys page allocator
+  //3·调用kvmalloc函数来实现内核新页表的初始化(建立一个地址空间)
   kvmalloc();      // kernel page table
   mpinit();        // detect other processors
   lapicinit();     // interrupt controller
@@ -32,8 +41,11 @@ main(void)
   fileinit();      // file table
   ideinit();       // disk 
   startothers();   // start other processors
+  //2·kinit2初始化剩余内核空间到PHYSTOP为未使用
   kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
+  //4·创建第一个用户进程
   userinit();      // first user process
+  //5·开始运行进程
   mpmain();        // finish this processor's setup
 }
 
@@ -48,12 +60,17 @@ mpenter(void)
 }
 
 // Common CPU setup code.
+  /*
+    主要的部分就是调用scheduler() 函数，开始运行进程。
+    scheduler的代码其核心代码exec与内存的关系(scheduler-> initcode.S -> main() -> exec).
+  */
 static void
 mpmain(void)
 {
   cprintf("cpu%d: starting %d\n", cpuid(), cpuid());
   idtinit();       // load idt register
   xchg(&(mycpu()->started), 1); // tell startothers() we're up
+  //调用scheduler() 函数，开始运行进程。
   scheduler();     // start running processes
 }
 

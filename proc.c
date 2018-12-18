@@ -117,6 +117,9 @@ found:
 
 //PAGEBREAK: 32
 // Set up first user process.
+  /*
+    创建第一个用户进程
+  */
 void
 userinit(void)
 {
@@ -128,6 +131,7 @@ userinit(void)
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
+  //其中跟内存有关的部分是 inituvm 
   inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
   p->sz = PGSIZE;
   memset(p->tf, 0, sizeof(*p->tf));
@@ -138,7 +142,8 @@ userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
-
+  
+  //通过 safestrcpy 将initcode.S的程序加载到刚刚创建的第一个进程中
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
 
@@ -319,6 +324,11 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+  /*
+    这个比较难
+    核心代码exec不好理解
+    其内存的关系(scheduler-> initcode.S -> main() -> exec).
+  */
 void
 scheduler(void)
 {

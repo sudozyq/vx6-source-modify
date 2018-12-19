@@ -70,7 +70,6 @@ struct segdesc {
 // +----------------+----------------+---------------------+
 //  \--- PDX(va) --/ \--- PTX(va) --/
 
-// page directory index
 //虚拟地址的前 10位来找到在页目录中的对应条目，如果该条目不存在，说明要找的页表页尚未分配
 #define PDX(va)         (((uint)(va) >> PDXSHIFT) & 0x3FF)
 

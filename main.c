@@ -60,10 +60,12 @@ mpenter(void)
 }
 
 // Common CPU setup code.
-  /*
-    主要的部分就是调用scheduler() 函数，开始运行进程。
-    scheduler的代码其核心代码exec与内存的关系(scheduler-> initcode.S -> main() -> exec).
-  */
+
+  /***************************************************
+  //主要的部分就是调用scheduler() 函数，开始运行进程。
+  //scheduler的代码其核心代码exec与内存的关系
+  //(scheduler-> initcode.S -> main() -> exec).
+  ****************************************************/
 static void
 mpmain(void)
 {

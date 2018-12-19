@@ -117,9 +117,10 @@ found:
 
 //PAGEBREAK: 32
 // Set up first user process.
-  /*
-    创建第一个用户进程
-  */
+
+/*****************************************************************************
+//创建第一个用户进程
+*****************************************************************************/
 void
 userinit(void)
 {
@@ -152,9 +153,7 @@ userinit(void)
   // writes to be visible, and the lock is also needed
   // because the assignment might not be atomic.
   acquire(&ptable.lock);
-
   p->state = RUNNABLE;
-
   release(&ptable.lock);
 }
 
@@ -324,11 +323,11 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
-  /*
-    这个比较难
-    核心代码exec不好理解
-    其内存的关系(scheduler-> initcode.S -> main() -> exec).
-  */
+
+  /*****************************************************************************
+  // 这个比较难核心代码exec不好理解
+  //其内存的关系(scheduler-> initcode.S -> main() -> exec).
+  *****************************************************************************/
 void
 scheduler(void)
 {

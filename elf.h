@@ -1,13 +1,14 @@
 // Format of an ELF executable file
 
 #define ELF_MAGIC 0x464C457FU  // "\x7FELF" in little endian
-  /*
-    一个 ELF 二进制文件包括了一个 ELF 头，即结构体 struct elfhdr ，
-    然后是连续 几个程序段的头，即结构体 struct proghdr 。
-    每个 proghdr 都描述了需要载入到内存中的程序段。
-    xv6 中的程序只有一个程序段的头，但其他操作系统中可能有多个
-  */
-// File header
+
+  // File header
+  /****************************************************************
+  //一个 ELF 二进制文件包括了一个 ELF 头，即结构体 struct elfhdr ，
+  //然后是连续 几个程序段的头，即结构体 struct proghdr 。
+  //每个 proghdr 都描述了需要载入到内存中的程序段。
+  //xv6 中的程序只有一个程序段的头，但其他操作系统中可能有多个。
+  *****************************************************************/
 struct elfhdr {
   uint magic;  // must equal ELF_MAGIC
   uchar elf[12];

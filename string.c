@@ -2,7 +2,7 @@
 #include "x86.h"
 
 void*
-//全部置0
+//全部置c
 memset(void *dst, int c, uint n)
 {
   if ((int)dst%4 == 0 && n%4 == 0){

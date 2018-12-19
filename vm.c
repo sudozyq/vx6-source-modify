@@ -32,25 +32,25 @@ seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
-  /*
-    walkpgdir 模仿 x86 的分页硬件为一个虚拟地址寻找 PTE 的过程。 
-    walkpgdir 通过虚拟地址的前 10位来找到在页目录中的对应条目，
-    如果该条目不存在，说明要找的页表页尚未分配；
-    如果 alloc 参数被设置了， walkpgdir 会分配页表页并将其物理地址放到页目录中。
-    最后用虚拟地址的接下来 10 位来找到其在页表中的 PTE 地址。
-  */
+  /***************************************************************
+  //walkpgdir 模仿 x86 的分页硬件为一个虚拟地址寻找 PTE 的过程。 
+  //walkpgdir 通过虚拟地址的前 10位来找到在页目录中的对应条目，
+  //如果该条目不存在，说明要找的页表页尚未分配；如果 alloc 参
+  //数被设置了， walkpgdir 会分配页表页并将其物理地址放到页目录中。
+  //最后用虚拟地址的接下来 10 位来找到其在页表中的 PTE 地址。
+  ****************************************************************/
 static pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
   pte_t *pgtab;
-
-  pde = &pgdir[PDX(va)];//通过虚拟地址的前 10位来找到在页目录中的对应条目
+  //通过虚拟地址的前 10位来找到在页目录中的对应条目
+  pde = &pgdir[PDX(va)];
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
   } else {
+  	//如果 alloc 参数被设置 了， walkpgdir 会分配页表页并将其物理地址放到页目录中
     if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
-		//如果 alloc 参数被设置 了， walkpgdir 会分配页表页并将其物理地址放到页目录中
       return 0;
     // Make sure all those PTE_P bits are zero.
     memset(pgtab, 0, PGSIZE);
@@ -66,12 +66,12 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
-  /*
-    mappages 做的工作是在页表中建立一段虚拟内存到物理内存的映射。
-    它是在页的级别，即一页一页地建立映射的。
-    对于每一个待映射的虚拟地址，mappages调用walkpgdir 来找到该地址对应的PTE地址。
-    然后初始化该PTE以保存对应的物理页号等信息。
-  */
+  /*****************************************************************************
+  //mappages 做的工作是在页表中建立一段虚拟内存到物理内存的映射。
+  //它是在页的级别，即一页一页地建立映射的。
+  //对于每一个待映射的虚拟地址，mappages调用walkpgdir 来找到该地址对应的PTE地址。
+  //然后初始化该PTE以保存对应的物理页号等信息。
+  *****************************************************************************/
 static int
 mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
@@ -81,11 +81,11 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
   a = (char*)PGROUNDDOWN((uint)va);
   last = (char*)PGROUNDDOWN(((uint)va) + size - 1);
   for(;;){
+  	//调用walkpgdir来找到该地址对应的PTE地址
     if((pte = walkpgdir(pgdir, a, 1)) == 0)
       return -1;
     if(*pte & PTE_P)
       panic("remap");
-	//来找到该地址对应的PTE地址
     *pte = pa | perm | PTE_P;
     if(a == last)
       break;
@@ -131,11 +131,12 @@ static struct kmap {
 };
 
 // Set up kernel part of a page table.
-  /*
-    首先分配一页内存来放置页目录，然后调用mappages 来建立内核需要的映射，
-    这些映射在kmap数组中找到。这里的映射包括内核的指令和数据，PHYSTOP以下的物理内存，
-    以及I/O设备所占的内存。 注意，setupkvm 不会建立任何用户内存的映射
-  */
+
+  /*****************************************************************************
+  //首先分配一页内存来放置页目录，然后调用mappages 来建立内核需要的映射，这些映
+  //射在kmap数组中找到。这里的映射包括内核的指令和数据，PHYSTOP以下的物理内存，
+  //以及I/O设备所占的内存。 注意，setupkvm 不会建立任何用户内存的映射
+  *****************************************************************************/
 pde_t*
 setupkvm(void)
 {
@@ -159,9 +160,11 @@ setupkvm(void)
 
 // Allocate one page table for the machine for the kernel address
 // space for scheduler processes.
-  /*
-    创建并切换到一个拥有内核运行所需的KERNBASE 以上映射的页表。这儿大部分的工作是有setupkvm 完成的。
-  */
+
+  /***********************************************************
+  //创建并切换到一个拥有内核运行所需的KERNBASE 以上映射的页表。
+  //这儿大部分的工作是有setupkvm 完成的。
+  ************************************************************/
 void
 kvmalloc(void)
 {
@@ -204,14 +207,15 @@ switchuvm(struct proc *p)
 
 // Load the initcode into address 0 of pgdir.
 // sz must be less than a page.
-  /*
-    首先是调用kalloc 函数从空闲链表上摘下一个内存段（4096字节），这就是分配了物理内存。
-    然后对刚刚分配的内存进行置零初始化。
-    接下来是调用mappages 函数为物理内存地址在pgdir 中创建PTE.   最后是调用memmove 函数 
-    进行内存内容的移动，其实就是内存的加载。
-    userinit 中通过 safestrcpy 将initcode.S的程序加载到刚刚创建的第一个进程中。
-    下面就是调用mpmain 开始运行第一个用户进程。
-  */
+
+
+  /*****************************************************************************
+  //首先是调用kalloc 函数从空闲链表上摘下一个内存段（4096字节），这就是分配了物
+  //理内存。然后对刚刚分配的内存进行置零初始化。接下来是调用mappages 函数为物理
+  //内存地址在pgdir 中创建PTE.   最后是调用memmove 函数进行内存内容的移动，其实就
+  //是内存的加载。userinit 中通过 safestrcpy 将initcode.S的程序加载到刚刚创建的
+  //第一个进程中。下面就是调用mpmain 开始运行第一个用户进程。
+  *****************************************************************************/
 void
 inituvm(pde_t *pgdir, char *init, uint sz)
 {
@@ -231,11 +235,12 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 
 // Load a program segment into pgdir.  addr must be page-aligned
 // and the pages from addr to addr+sz must already be mapped.
-  // 把段的内容 载入内存中
-  /*
-    loaduvm 通过walkpgdir 来找到写入ELF段的内存的物理地址；
-    通过readi 来将段的内容从文件中读出。
-  */
+
+  /*****************************************************************************
+  //把段的内容 载入内存中
+  //loaduvm 通过walkpgdir 来找到写入ELF段的内存的物理地址；
+  //通过readi 来将段的内容从文件中读出。
+  *****************************************************************************/
 int
 loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 {
@@ -262,13 +267,14 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
-  /*
-    此段代码，在实现最佳匹配算法会用到，重点关注
-    allocuvm 函数需要3个参数，第一个是pgdir ，
-    第二个是旧的内存大小，第三个是新的内存大小。
-    函数的目的就是新增 差额（newsz - oldsz）的内存页，
-    并在pgdir中新建物理地址对应的页表。
-  */
+
+  /*****************************************************************************
+  //此段代码，在实现其他内存匹配算法会用到，重点关注
+  //allocuvm 函数需要3个参数，第一个是pgdir ，
+  //第二个是旧的内存大小，第三个是新的内存大小。
+  //函数的目的就是新增 差额（newsz - oldsz）的内存页，
+  //并在pgdir中新建物理地址对应的页表。
+  *****************************************************************************/
 int
 allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 {
